@@ -1,0 +1,41 @@
+{
+  "name": "yggdrasil",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A reading tracking app with social elements",
+  "author": "Gabriel Monge",
+  "license": "ISC",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.3",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/material": "^9.4.0",
+    "@prisma/client": "7.10.0",
+    "@zxing/browser": "^0.2.1",
+    "bcryptjs": "^3.0.3",
+    "next": "16.3.3",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.3",
+    "prisma": "7.10.0",
+    "typescript": "^5",
+    "vite-tsconfig-paths": "6.1.1",
+    "vitest": "4.1.11"
+  }
+}
