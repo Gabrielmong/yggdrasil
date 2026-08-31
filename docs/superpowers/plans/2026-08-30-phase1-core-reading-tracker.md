@@ -167,7 +167,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -268,21 +267,47 @@ model UserBook {
 }
 ```
 
-- [ ] **Step 2: Write `lib/prisma.ts`**
+- [ ] **Step 2: Write `prisma.config.ts`**
+
+Note: Prisma 7 (pinned in Task 1) no longer supports `datasource.url` in
+`schema.prisma` — the connection URL for Migrate now lives in
+`prisma.config.ts`, and `PrismaClient` requires a runtime driver adapter
+(see Step 3). Install the adapter deps first:
+
+```bash
+npm install pg @prisma/adapter-pg dotenv
+npm install -D @types/pg
+```
+
+```typescript
+import "dotenv/config";
+import { defineConfig, env } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: { path: "prisma/migrations" },
+  datasource: { url: env("DATABASE_URL") },
+});
+```
+
+- [ ] **Step 3: Write `lib/prisma.ts`**
 
 ```typescript
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 ```
 
-- [ ] **Step 3: Set up `DATABASE_URL` and run the migration**
+- [ ] **Step 4: Set up `DATABASE_URL` and run the migration**
 
 Copy `.env.example` to `.env` and fill in a real Postgres connection string (a local Postgres via Docker, or a hosted Neon/Supabase instance — either works for dev). Then:
 
@@ -292,7 +317,7 @@ npx prisma migrate dev --name init
 
 Expected: migration succeeds and creates the tables listed above.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add -A

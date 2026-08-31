@@ -1,0 +1,1 @@
+ALTER TYPE "BookSource" ADD VALUE 'HARDCOVER';
