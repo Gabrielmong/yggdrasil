@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { Autocomplete, TextField, CircularProgress } from "@mui/material";
 
 /** Multi-select autocomplete for genres or tags, backed by a search
@@ -56,6 +56,7 @@ export default function GenreTagAutocomplete({
           {...params}
           label={label}
           slotProps={{
+            ...params.slotProps,
             input: {
               ...params.slotProps.input,
               endAdornment: (
@@ -64,6 +65,16 @@ export default function GenreTagAutocomplete({
                   {params.slotProps.input.endAdornment}
                 </>
               ),
+            },
+            htmlInput: {
+              ...params.slotProps.htmlInput,
+              onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === "Backspace" && inputValue === "") {
+                  event.preventDefault();
+                  return;
+                }
+                params.slotProps.htmlInput.onKeyDown?.(event);
+              },
             },
           }}
         />

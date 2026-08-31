@@ -48,6 +48,7 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
   const [allResults, setAllResults] = useState<BookSearchResult[] | null>(null);
   const [fetchedSource, setFetchedSource] = useState<Source | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Searching...");
   const [error, setError] = useState<string | null>(null);
 
   const needsFetch = fetchedSource !== "all" && fetchedSource !== source;
@@ -66,6 +67,7 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
     if (searchSource !== "all") params.set("source", searchSource);
 
     setLoading(true);
+    setLoadingMessage("Searching...");
     const response = await fetch(`/api/books/search?${params.toString()}`);
     setLoading(false);
     if (response.status === 401) {
@@ -93,6 +95,7 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
     const trimmedIsbn = isbn.trim();
     if (trimmedIsbn) {
       setLoading(true);
+      setLoadingMessage("Fetching book information...");
       const response = await fetch(`/api/books/lookup?isbn=${encodeURIComponent(trimmedIsbn)}`);
       setLoading(false);
       if (response.status === 401) {
@@ -128,6 +131,8 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
 
   async function handleSelect(selection: BookSearchResult) {
     setError(null);
+    setLoading(true);
+    setLoadingMessage("Fetching book information...");
     const params = new URLSearchParams();
     if (selection.isbn) params.set("isbn", selection.isbn);
     if (selection.googleId) params.set("googleId", selection.googleId);
@@ -163,6 +168,7 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
       return;
     }
 
+    setLoading(false);
     const body = await createResponse.json().catch(() => ({}));
     setError(body.error ?? "Could not save that book. Please try another result or use manual entry.");
   }
@@ -189,8 +195,9 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
       </Box>
 
       {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 8 }}>
           <CircularProgress size={28} />
+          <Typography color="text.secondary">{loadingMessage}</Typography>
         </Box>
       )}
       {!loading && error && <Typography color="error">{error}</Typography>}
