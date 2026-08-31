@@ -31,28 +31,56 @@ export default function BarcodeScanner({
     };
 
     const reader = new BrowserMultiFormatReader();
+    const video = videoRef.current!;
     let controls: { stop: () => void } | undefined;
+  let stream: MediaStream | null = null;
+    let disposed = false;
 
-    reader
-      .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
-        if (result) {
-          setStatus("found");
-          controls?.stop();
-          onDecode(result.getText());
+    const stopCamera = () => {
+      controls?.stop();
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (video.srcObject === stream) video.srcObject = null;
+      }
+    };
+
+    async function startScanner() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        if (disposed) {
+          stopCamera();
+          return;
         }
-        // NotFoundException fires continuously while no barcode is in frame; ignore it.
-      })
-      .then((c) => {
-        controls = c;
+
+        video.srcObject = stream;
+        await video.play();
+        const scannerControls = await reader.decodeFromVideoElement(video, (result) => {
+          if (result && !disposed) {
+            setStatus("found");
+            stopCamera();
+            onDecode(result.getText());
+          }
+          // NotFoundException fires continuously while no barcode is in frame; ignore it.
+        });
+
+        if (disposed) {
+          scannerControls.stop();
+          return;
+        }
+        controls = scannerControls;
         setStatus("scanning");
-      })
-      .catch(() => {
+      } catch {
+        if (disposed) return;
         setStatus("error");
         onError("Camera access failed. Check permissions or use manual entry below.");
-      });
+      }
+    }
+
+    void startScanner();
 
     return () => {
-      controls?.stop();
+      disposed = true;
+      stopCamera();
       console.warn = originalWarn;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,7 +89,13 @@ export default function BarcodeScanner({
   return (
     <Box>
       <Box sx={{ position: "relative", overflow: "hidden", borderRadius: 2 }}>
-        <video ref={videoRef} style={{ display: "block", width: "100%", borderRadius: 8 }} />
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{ display: "block", width: "100%", borderRadius: 8 }}
+        />
         <Box
           aria-hidden="true"
           sx={{

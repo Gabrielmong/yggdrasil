@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, TextField, Button, Typography } from "@mui/material";
+import BarcodeScanner from "@/components/BarcodeScanner";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import GenreTagAutocomplete from "@/components/GenreTagAutocomplete";
 
@@ -26,6 +27,7 @@ export default function ManualBookForm({ onCreated }: { onCreated: (book: BookLi
   const [coverImageId, setCoverImageId] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState("");
   const [publishedYear, setPublishedYear] = useState("");
+  const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -75,7 +77,29 @@ export default function ManualBookForm({ onCreated }: { onCreated: (book: BookLi
       {error && <Typography color="error">{error}</Typography>}
       <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       <TextField label="Authors (comma-separated)" value={authors} onChange={(e) => setAuthors(e.target.value)} />
-      <TextField label="ISBN (optional)" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, flexWrap: "wrap" }}>
+        <TextField
+          label="ISBN (optional)"
+          value={isbn}
+          onChange={(e) => setIsbn(e.target.value)}
+          sx={{ flex: 1, minWidth: 220 }}
+        />
+        <Button type="button" variant="outlined" onClick={() => setScanning((current) => !current)}>
+          {scanning ? "Close scanner" : "Scan ISBN"}
+        </Button>
+      </Box>
+      {scanning && (
+        <BarcodeScanner
+          onDecode={(value) => {
+            setIsbn(value);
+            setScanning(false);
+          }}
+          onError={(message) => {
+            setError(message);
+            setScanning(false);
+          }}
+        />
+      )}
       <TextField
         label="Description"
         multiline
