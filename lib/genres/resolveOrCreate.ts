@@ -98,3 +98,27 @@ export async function resolveOrCreateTag(rawName: string): Promise<{ id: string;
     throw new Error(`Failed to resolve or create tag: ${rawName}`);
   }
 }
+
+async function resolveNames(
+  rawNames: string[],
+  resolver: (name: string) => Promise<{ id: string; name: string }>
+): Promise<{ id: string; name: string }[]> {
+  const cleaned = [...new Set(rawNames.map((n) => n.trim()).filter(Boolean))];
+  const resolved = await Promise.all(cleaned.map((name) => resolver(name)));
+  return [...new Map(resolved.map((r) => [r.id, r])).values()];
+}
+
+/** Resolves a raw list of genre names to canonical entities: trims, drops
+ * empty strings, deduplicates the input, and — critically — deduplicates
+ * the RESULT by resolved id, since two distinct raw labels (e.g. "Sci-Fi"
+ * and "Science Fiction") commonly collapse onto the same canonical Genre,
+ * and writing that entity twice into BookGenre's composite primary key
+ * would otherwise violate the constraint. */
+export async function resolveGenreNames(rawNames: string[]): Promise<{ id: string; name: string }[]> {
+  return resolveNames(rawNames, resolveOrCreateGenre);
+}
+
+/** Same as resolveGenreNames, for Tag. */
+export async function resolveTagNames(rawNames: string[]): Promise<{ id: string; name: string }[]> {
+  return resolveNames(rawNames, resolveOrCreateTag);
+}

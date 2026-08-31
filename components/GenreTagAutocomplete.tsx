@@ -49,7 +49,7 @@ export default function GenreTagAutocomplete({
       value={value}
       inputValue={inputValue}
       onInputChange={(_, newInput) => setInputValue(newInput)}
-      onChange={(_, newValue) => onChange(newValue as string[])}
+      onChange={(_, newValue) => onChange([...new Set(newValue as string[])])}
       loading={loading}
       renderInput={(params) => (
         <TextField

@@ -172,6 +172,7 @@ model BookGenre {
   genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
   @@id([bookId, genreId])
+  @@index([genreId])
 }
 
 model BookTag {
@@ -182,4 +183,5 @@ model BookTag {
   tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([bookId, tagId])
+  @@index([tagId])
 }

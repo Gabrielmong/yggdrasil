@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { computeBookEditDiff } from "@/lib/books/bookEditDiff";
 import { isValidImageId } from "@/lib/storage/isValidImageId";
-import { resolveOrCreateGenre, resolveOrCreateTag } from "@/lib/genres/resolveOrCreate";
+import { resolveGenreNames, resolveTagNames } from "@/lib/genres/resolveOrCreate";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +40,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  // Resolve genre/tag names to canonical entities BEFORE the transaction:
+  // resolving may call Claude on a miss, which must not happen inside an
+  // interactive transaction (risks the transaction timeout, and a rolled-
+  // back transaction can't undo a Genre/Tag row the resolver already
+  // created against the global client). Diffing against the resolved
+  // (canonical) names below also means edit history records what the book
+  // actually ends up displaying, not a raw synonym, and resubmitting a
+  // synonym of an already-set genre correctly produces no diff instead of
+  // a spurious edit record.
+  const genreEntities = genres !== undefined ? await resolveGenreNames(genres) : undefined;
+  const tagEntities = tags !== undefined ? await resolveTagNames(tags) : undefined;
+  const resolvedGenres = genreEntities?.map((g) => g.name);
+  const resolvedTags = tagEntities?.map((t) => t.name);
+
   const result = await prisma.$transaction(async (tx) => {
     const book = await tx.book.findUnique({ where: { id }, include: BOOK_TAXONOMY_INCLUDE });
     if (!book) {
@@ -57,7 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         coverUrl: current.coverUrl,
         coverImageId: current.coverImageId,
       },
-      { title: title?.trim(), authors, description, genres, tags, coverUrl, coverImageId }
+      { title: title?.trim(), authors, description, genres: resolvedGenres, tags: resolvedTags, coverUrl, coverImageId }
     );
 
     if (!diff) {
@@ -76,17 +90,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     if (diff.newValues.genres !== undefined) {
-      const genreEntities = await Promise.all(diff.newValues.genres.map((name) => resolveOrCreateGenre(name)));
       await tx.bookGenre.deleteMany({ where: { bookId: id } });
-      if (genreEntities.length > 0) {
-        await tx.bookGenre.createMany({ data: genreEntities.map((g) => ({ bookId: id, genreId: g.id })) });
+      if (genreEntities && genreEntities.length > 0) {
+        await tx.bookGenre.createMany({
+          data: genreEntities.map((g) => ({ bookId: id, genreId: g.id })),
+          skipDuplicates: true,
+        });
       }
     }
     if (diff.newValues.tags !== undefined) {
-      const tagEntities = await Promise.all(diff.newValues.tags.map((name) => resolveOrCreateTag(name)));
       await tx.bookTag.deleteMany({ where: { bookId: id } });
-      if (tagEntities.length > 0) {
-        await tx.bookTag.createMany({ data: tagEntities.map((t) => ({ bookId: id, tagId: t.id })) });
+      if (tagEntities && tagEntities.length > 0) {
+        await tx.bookTag.createMany({
+          data: tagEntities.map((t) => ({ bookId: id, tagId: t.id })),
+          skipDuplicates: true,
+        });
       }
     }
 

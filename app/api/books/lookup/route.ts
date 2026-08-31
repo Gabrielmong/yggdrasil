@@ -5,8 +5,9 @@ import { fetchFromGoogleBooks } from "@/lib/books/googleBooks";
 import { fetchFromOpenLibrary } from "@/lib/books/openLibrary";
 import { fetchFromHardcover } from "@/lib/books/hardcover";
 import { mergeBookData } from "@/lib/books/mergeBookData";
-import { resolveOrCreateGenre } from "@/lib/genres/resolveOrCreate";
+import { resolveGenreNames, resolveTagNames } from "@/lib/genres/resolveOrCreate";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
+import { generateMetadata } from "@/lib/books/generateMetadata";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -49,7 +50,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No book found for that lookup" }, { status: 404 });
   }
 
-  const genreEntities = await Promise.all(merged.genres.map((name) => resolveOrCreateGenre(name)));
+  // Generate clean, reader-facing genres/tags immediately rather than
+  // waiting for the periodic backfill script — provider "genres" (especially
+  // OpenLibrary's raw bibliographic subject headings) are often far too
+  // specific to use directly, so they're passed in only as a hint. Also
+  // fills a missing description in the same pass.
+  const generated = await generateMetadata({
+    title: merged.title,
+    authors: merged.authors,
+    description: merged.description,
+    genres: merged.genres,
+  });
+
+  const description = merged.description?.trim() || generated.description || null;
+  const genres = generated.genres && generated.genres.length > 0 ? generated.genres : merged.genres;
+  const tags = generated.tags ?? [];
+
+  const [genreEntities, tagEntities] = await Promise.all([resolveGenreNames(genres), resolveTagNames(tags)]);
 
   const book = await prisma.book.create({
     data: {
@@ -57,12 +74,13 @@ export async function GET(request: Request) {
       title: merged.title,
       authors: merged.authors,
       coverUrl: merged.coverUrl,
-      description: merged.description,
+      description,
       pageCount: merged.pageCount,
       publishedYear: merged.publishedYear,
       source: merged.source,
       rawResponse: { google, openLibrary, hardcover },
       genreLinks: { create: genreEntities.map((g) => ({ genreId: g.id })) },
+      tagLinks: { create: tagEntities.map((t) => ({ tagId: t.id })) },
     },
     include: BOOK_TAXONOMY_INCLUDE,
   });

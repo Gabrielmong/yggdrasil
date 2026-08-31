@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -38,8 +39,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       ...(startedAt !== undefined && { startedAt: startedAt ? new Date(startedAt) : null }),
       ...(finishedAt !== undefined && { finishedAt: finishedAt ? new Date(finishedAt) : null }),
     },
-    include: { book: true },
+    include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
   });
 
-  return NextResponse.json(updated);
+  return NextResponse.json({ ...updated, book: serializeBookTaxonomy(updated.book) });
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseClusterResponse } from "../../scripts/backfill-genres-tags";
+import { parseClusterResponse } from "@/lib/genres/clusterResponse";
 
 describe("parseClusterResponse", () => {
   it("returns the parsed clusters when every raw value is covered", () => {
@@ -48,5 +48,16 @@ describe("parseClusterResponse", () => {
   it("strips a markdown code fence before parsing", () => {
     const result = parseClusterResponse('```json\n{"clusters": [{"canonical": "Fiction", "raw": ["Fiction"]}]}\n```', ["Fiction"]);
     expect(result).toEqual([{ canonical: "Fiction", raw: ["Fiction"] }]);
+  });
+
+  it("ignores a raw value in any cluster after the first one that claims it", () => {
+    const result = parseClusterResponse(
+      '{"clusters": [{"canonical": "Fiction", "raw": ["Fiction", "Novel"]}, {"canonical": "Drama", "raw": ["Novel", "Play"]}]}',
+      ["Fiction", "Novel", "Play"]
+    );
+    expect(result).toEqual([
+      { canonical: "Fiction", raw: ["Fiction", "Novel"] },
+      { canonical: "Drama", raw: ["Play"] },
+    ]);
   });
 });

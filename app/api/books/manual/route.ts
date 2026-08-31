@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { isValidImageId } from "@/lib/storage/isValidImageId";
-import { resolveOrCreateGenre, resolveOrCreateTag } from "@/lib/genres/resolveOrCreate";
+import { resolveGenreNames, resolveTagNames } from "@/lib/genres/resolveOrCreate";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
 
 export async function POST(request: Request) {
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     return NextResponse.json(serializeBookTaxonomy(existing));
   }
 
-  const genreEntities = await Promise.all((genres ?? []).map((name: string) => resolveOrCreateGenre(name)));
-  const tagEntities = await Promise.all((tags ?? []).map((name: string) => resolveOrCreateTag(name)));
+  const genreEntities = await resolveGenreNames(genres ?? []);
+  const tagEntities = await resolveTagNames(tags ?? []);
 
   const book = await prisma.book.create({
     data: {
