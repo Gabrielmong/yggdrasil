@@ -23,13 +23,10 @@ export async function POST(request: Request) {
     }
   }
 
-  // Manual entries are always stored in a distinct "manual:" namespace so a
-  // hand-typed ISBN can never collide with (or shadow) a real ISBN in the
-  // shared Book cache — see finding #5 of the final review.
+  // Keep ISBNs in the shared namespace so a later scan can find this book.
+  // Entries without an ISBN still need a unique synthetic key.
   const typedIsbn = typeof isbn === "string" ? isbn.trim() : "";
-  const namespacedIsbn = typedIsbn.startsWith("manual:")
-    ? typedIsbn
-    : `manual:${typedIsbn || Date.now()}`;
+  const namespacedIsbn = typedIsbn || `manual:${Date.now()}`;
 
   const existing = await prisma.book.findUnique({ where: { isbn: namespacedIsbn }, include: BOOK_TAXONOMY_INCLUDE });
   if (existing) {
