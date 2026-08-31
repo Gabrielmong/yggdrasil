@@ -136,6 +136,7 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
     const params = new URLSearchParams();
     if (selection.isbn) params.set("isbn", selection.isbn);
     if (selection.googleId) params.set("googleId", selection.googleId);
+    if (selection.hardcoverId) params.set("hardcoverId", selection.hardcoverId);
 
     const response = await fetch(`/api/books/lookup?${params.toString()}`);
     if (response.status === 401) {
@@ -147,30 +148,9 @@ export default function IsbnLookupForm({ onFound }: { onFound: (book: BookLike) 
       return;
     }
 
-    const createResponse = await fetch("/api/books/manual", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        isbn: selection.googleId ? `manual:${selection.googleId}` : "",
-        title: selection.title,
-        authors: selection.authors,
-        coverUrl: selection.coverUrl,
-      }),
-    });
-
-    if (createResponse.status === 401) {
-      router.push("/login");
-      return;
-    }
-
-    if (createResponse.ok) {
-      onFound(await createResponse.json());
-      return;
-    }
-
     setLoading(false);
-    const body = await createResponse.json().catch(() => ({}));
-    setError(body.error ?? "Could not save that book. Please try another result or use manual entry.");
+    const body = await response.json().catch(() => ({}));
+    setError(body.error ?? "Could not fetch complete information for that book. Please try another result.");
   }
 
   return (

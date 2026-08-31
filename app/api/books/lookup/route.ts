@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { fetchFromGoogleBooks } from "@/lib/books/googleBooks";
 import { fetchFromOpenLibrary } from "@/lib/books/openLibrary";
-import { fetchFromHardcover } from "@/lib/books/hardcover";
+import { fetchFromHardcover, fetchFromHardcoverById } from "@/lib/books/hardcover";
 import { mergeBookData } from "@/lib/books/mergeBookData";
 import { resolveGenreNames, resolveTagNames } from "@/lib/genres/resolveOrCreate";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
-import { generateMetadata } from "@/lib/books/generateMetadata";
+import { generateMetadata, type GeneratedMetadata } from "@/lib/books/generateMetadata";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -18,7 +18,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const isbn = searchParams.get("isbn");
   const googleId = searchParams.get("googleId");
-  const lookupKey = isbn ?? googleId;
+  const hardcoverId = searchParams.get("hardcoverId");
+  const lookupKey = isbn ?? googleId ?? hardcoverId;
 
   if (!lookupKey) {
     return NextResponse.json({ error: "isbn or googleId query parameter is required" }, { status: 400 });
@@ -30,9 +31,9 @@ export async function GET(request: Request) {
   }
 
   const [googleResult, openLibraryResult, hardcoverResult] = await Promise.allSettled([
-    googleId ? fetchFromGoogleBooks(googleId, "id") : fetchFromGoogleBooks(isbn!, "isbn"),
+    googleId ? fetchFromGoogleBooks(googleId, "id") : isbn ? fetchFromGoogleBooks(isbn, "isbn") : Promise.resolve(null),
     isbn ? fetchFromOpenLibrary(isbn) : Promise.resolve(null),
-    isbn ? fetchFromHardcover(isbn) : Promise.resolve(null),
+    isbn ? fetchFromHardcover(isbn) : hardcoverId ? fetchFromHardcoverById(hardcoverId) : Promise.resolve(null),
   ]);
 
   const google = googleResult.status === "fulfilled" ? googleResult.value : null;
@@ -55,14 +56,20 @@ export async function GET(request: Request) {
   // OpenLibrary's raw bibliographic subject headings) are often far too
   // specific to use directly, so they're passed in only as a hint. Also
   // fills a missing description in the same pass.
-  const generated = await generateMetadata({
-    title: merged.title,
-    authors: merged.authors,
-    description: merged.description,
-    genres: merged.genres,
-  });
+  let generated: GeneratedMetadata = {};
+  try {
+    generated = await generateMetadata({
+      title: merged.title,
+      authors: merged.authors,
+      description: merged.description,
+      genres: merged.genres,
+    });
+  } catch (error) {
+    console.error("[books/lookup] metadata generation failed", error);
+  }
 
   const description = merged.description?.trim() || generated.description || null;
+  const authors = merged.authors.length > 0 ? merged.authors : generated.authors ?? [];
   const genres = generated.genres && generated.genres.length > 0 ? generated.genres : merged.genres;
   const tags = generated.tags ?? [];
 
@@ -72,7 +79,7 @@ export async function GET(request: Request) {
     data: {
       isbn: merged.isbn,
       title: merged.title,
-      authors: merged.authors,
+      authors,
       coverUrl: merged.coverUrl,
       description,
       pageCount: merged.pageCount,

@@ -16,7 +16,17 @@ interface HardcoverResponse {
   data?: { books?: HardcoverBook[] };
 }
 
-export async function fetchFromHardcover(isbn: string): Promise<Partial<BookData> | null> {
+const BOOK_FIELDS = `
+  title
+  description
+  pages
+  release_date
+  image { url }
+  contributions { author { name } }
+  genres { name }
+`;
+
+async function fetchBook(variables: Record<string, string>, query: string): Promise<Partial<BookData> | null> {
   const token = process.env.HARDCOVER_API_KEY;
   if (!token) return null;
 
@@ -29,20 +39,8 @@ export async function fetchFromHardcover(isbn: string): Promise<Partial<BookData
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: `
-          query BookByIsbn($isbn: String!) {
-            books(where: { isbns: { _contains: [$isbn] } }, limit: 1) {
-              title
-              description
-              pages
-              release_date
-              image { url }
-              contributions { author { name } }
-              genres { name }
-            }
-          }
-        `,
-        variables: { isbn },
+        query,
+        variables,
       }),
       signal: AbortSignal.timeout(5000),
     });
@@ -68,4 +66,26 @@ export async function fetchFromHardcover(isbn: string): Promise<Partial<BookData
     coverUrl: book.image?.url ?? null,
     source: "HARDCOVER",
   };
+}
+
+export function fetchFromHardcover(isbn: string): Promise<Partial<BookData> | null> {
+  return fetchBook(
+    { isbn },
+    `query BookByIsbn($isbn: String!) {
+      books(where: { isbns: { _contains: [$isbn] } }, limit: 1) {
+        ${BOOK_FIELDS}
+      }
+    }`,
+  );
+}
+
+export function fetchFromHardcoverById(id: string): Promise<Partial<BookData> | null> {
+  return fetchBook(
+    { id },
+    `query BookById($id: ID!) {
+      books(where: { id: { _eq: $id } }, limit: 1) {
+        ${BOOK_FIELDS}
+      }
+    }`,
+  );
 }
