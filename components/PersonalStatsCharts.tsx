@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Stack, ButtonBase, Paper, type SxProps, type Theme } from "@mui/material";
+import { Box, Typography, ButtonBase, Paper, type SxProps, type Theme } from "@mui/material";
 import ChartSection from "@/components/ChartSection";
 import PieChartSection from "@/components/PieChartSection";
 import type { PersonalStats } from "@/lib/stats/personalStats";
@@ -77,14 +77,14 @@ export default function PersonalStatsCharts({
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap" }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(3, 1fr)", sm: "repeat(6, 1fr)" }, gap: 1.5 }}>
         {counters.map((counter) => (
-          <ButtonBase key={counter.label} sx={statChipSx}>
+          <ButtonBase key={counter.label} sx={{ ...statChipSx, minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, color: "primary.main" }}>{counter.value}</Typography>
             <Typography variant="caption" color="text.secondary">{counter.label}</Typography>
           </ButtonBase>
         ))}
-      </Stack>
+      </Box>
 
       <Box
         sx={{
