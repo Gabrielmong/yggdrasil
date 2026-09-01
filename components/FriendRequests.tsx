@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListItemText, Button, Stack } from "@mui/material";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
+import { displayName, displayInitial } from "@/lib/displayName";
 
 export interface RequestEntry {
   friendshipId: string;
-  user: { id: string; name: string | null; email: string; image: string | null; avatarImageId: string | null };
+  user: { id: string; name: string | null; image: string | null; avatarImageId: string | null };
 }
 
 interface FriendRequestsProps {
@@ -51,10 +52,10 @@ export default function FriendRequests({ incoming, outgoing, onRespond, onCancel
               <ListItem key={entry.friendshipId} disableGutters>
                 <ListItemAvatar>
                   <Avatar src={resolveImageUrl(entry.user.avatarImageId, entry.user.image, "sm", "profilepictures") ?? undefined}>
-                    {(entry.user.name ?? entry.user.email).charAt(0).toUpperCase()}
+                    {displayInitial(entry.user.name)}
                   </Avatar>
                 </ListItemAvatar>
-                <ListItemText primary={entry.user.name ?? entry.user.email} />
+                <ListItemText primary={displayName(entry.user.name)} />
                 <Stack direction="row" spacing={1}>
                   <Button
                     size="small"
@@ -86,10 +87,10 @@ export default function FriendRequests({ incoming, outgoing, onRespond, onCancel
               <ListItem key={entry.friendshipId} disableGutters>
                 <ListItemAvatar>
                   <Avatar src={resolveImageUrl(entry.user.avatarImageId, entry.user.image, "sm", "profilepictures") ?? undefined}>
-                    {(entry.user.name ?? entry.user.email).charAt(0).toUpperCase()}
+                    {displayInitial(entry.user.name)}
                   </Avatar>
                 </ListItemAvatar>
-                <ListItemText primary={entry.user.name ?? entry.user.email} secondary="Pending" />
+                <ListItemText primary={displayName(entry.user.name)} secondary="Pending" />
                 <Button size="small" variant="text" disabled={busyId === entry.friendshipId} onClick={() => handleCancel(entry.friendshipId)}>
                   Cancel
                 </Button>

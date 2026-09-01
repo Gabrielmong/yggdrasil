@@ -10,6 +10,7 @@ import CompatibilityScore from "@/components/compare/CompatibilityScore";
 import OverlapChips from "@/components/compare/OverlapChips";
 import SharedBooksList, { type SharedBookRow } from "@/components/compare/SharedBooksList";
 import RecommendationsGrid, { type RecommendedBookRow } from "@/components/compare/RecommendationsGrid";
+import { displayName } from "@/lib/displayName";
 
 interface CompareRow {
   name: string;
@@ -58,7 +59,7 @@ export default function CompareStatsPage({ params }: { params: Promise<{ userId:
     ])
       .then(([statsData, profileData]) => {
         if (statsData) setStats(statsData);
-        if (profileData) setProfileName(profileData.name ?? profileData.email);
+        if (profileData) setProfileName(displayName(profileData.name));
       })
       .catch(() => setError("Could not load comparison. Please try again later."));
   }, [userId, router]);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Box, Typography, List, ListItemButton, ListItemAvatar, Avatar, ListItemText, Button } from "@mui/material";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
+import { displayName, displayInitial } from "@/lib/displayName";
 import type { RequestEntry } from "@/components/FriendRequests";
 
 /** Accepted friends list — each row links to that friend's read-only
@@ -37,10 +38,10 @@ export default function FriendsList({
             <ListItemButton key={entry.friendshipId} component={Link} href={`/friends/${entry.user.id}`} sx={{ borderRadius: 1 }}>
               <ListItemAvatar>
                 <Avatar src={resolveImageUrl(entry.user.avatarImageId, entry.user.image, "sm", "profilepictures") ?? undefined}>
-                  {(entry.user.name ?? entry.user.email).charAt(0).toUpperCase()}
+                  {displayInitial(entry.user.name)}
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={entry.user.name ?? entry.user.email} />
+              <ListItemText primary={displayName(entry.user.name)} />
               <Button
                 size="small"
                 variant="text"

@@ -12,6 +12,7 @@ import PersonalStatsCharts from "@/components/PersonalStatsCharts";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
 import { getStatChipSx, getStatChipHoverSx } from "@/lib/statChipStyle";
 import { buildStatCounters } from "@/lib/stats/statCounters";
+import { displayInitial } from "@/lib/displayName";
 import type { PersonalStats } from "@/lib/stats/personalStats";
 
 interface FriendUserBook {
@@ -24,7 +25,6 @@ interface FriendUserBook {
 interface FriendProfile {
   id: string;
   name: string | null;
-  email: string;
   image: string | null;
   avatarImageId: string | null;
   createdAt: string;
@@ -131,9 +131,8 @@ export default function FriendShelfPage({ params }: { params: Promise<{ userId: 
         {profile && (
           <ProfileHero
             avatarUrl={avatarUrl}
-            fallbackInitial={profile.name?.[0] ?? profile.email[0]}
+            fallbackInitial={displayInitial(profile.name)}
             name={profile.name}
-            email={profile.email}
             createdAt={profile.createdAt}
           >
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, mt: 3, maxWidth: 360, mx: "auto" }}>

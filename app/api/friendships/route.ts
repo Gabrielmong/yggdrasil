@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { symmetricPairWhere } from "@/lib/friends/friendshipWhere";
 
-const USER_SELECT = { id: true, name: true, email: true, image: true, avatarImageId: true } as const;
+// No email here — another user's email address should only ever be
+// visible on their own profile page, never in a friends/requests list.
+const USER_SELECT = { id: true, name: true, image: true, avatarImageId: true } as const;
 
 export async function GET() {
   const session = await auth();

@@ -25,7 +25,9 @@ export async function GET(request: Request) {
         { email: { contains: q, mode: "insensitive" } },
       ],
     },
-    select: { id: true, name: true, email: true, image: true, avatarImageId: true },
+    // email is matched against above but never returned — another user's
+    // email address should only ever be visible on their own profile page.
+    select: { id: true, name: true, image: true, avatarImageId: true },
     take: 20,
   });
 

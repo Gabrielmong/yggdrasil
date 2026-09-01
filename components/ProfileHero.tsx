@@ -9,10 +9,14 @@ function memberSince(createdAt: string): string {
 }
 
 /** Shared profile-card hero: moss-green gradient banner with the avatar
- * overlapping it, name/email/member-since below. Used by both the current
+ * overlapping it, name/member-since below. Used by both the current
  * user's profile page and a friend's shelf page so they read as the same
  * kind of card. `children` holds whatever page-specific controls go below
- * the identity block (stat chips, an avatar upload button, etc). */
+ * the identity block (stat chips, an avatar upload button, etc).
+ *
+ * `email` is optional and shown only when passed — another user's email
+ * address should only ever be visible on their own profile page, so the
+ * friend page never passes it. */
 export default function ProfileHero({
   avatarUrl,
   fallbackInitial,
@@ -24,7 +28,7 @@ export default function ProfileHero({
   avatarUrl?: string | null;
   fallbackInitial: string;
   name: string | null;
-  email: string;
+  email?: string;
   createdAt: string;
   children?: ReactNode;
 }) {
@@ -58,9 +62,11 @@ export default function ProfileHero({
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           {name ?? "Reader"}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {email}
-        </Typography>
+        {email && (
+          <Typography variant="body2" color="text.secondary">
+            {email}
+          </Typography>
+        )}
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
           Member since {memberSince(createdAt)}
         </Typography>

@@ -17,9 +17,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ use
     return NextResponse.json({ error: "Not friends" }, { status: 403 });
   }
 
+  // No email here — another user's email address should only ever be
+  // visible on their own profile page, never on a friend's page.
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, image: true, avatarImageId: true, createdAt: true },
+    select: { id: true, name: true, image: true, avatarImageId: true, createdAt: true },
   });
   if (!user) {
     return NextResponse.json({ error: "Not friends" }, { status: 403 });

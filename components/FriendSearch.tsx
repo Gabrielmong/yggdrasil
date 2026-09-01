@@ -15,13 +15,13 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
+import { displayName, displayInitial } from "@/lib/displayName";
 
 type Relationship = "NONE" | "PENDING_OUTGOING" | "PENDING_INCOMING" | "FRIENDS";
 
 interface SearchResult {
   id: string;
   name: string | null;
-  email: string;
   image: string | null;
   avatarImageId: string | null;
   relationship: Relationship;
@@ -117,10 +117,10 @@ export default function FriendSearch({ onRequestSent }: { onRequestSent: () => v
             >
               <ListItemAvatar>
                 <Avatar src={resolveImageUrl(r.avatarImageId, r.image, "sm", "profilepictures") ?? undefined}>
-                  {(r.name ?? r.email).charAt(0).toUpperCase()}
+                  {displayInitial(r.name)}
                 </Avatar>
               </ListItemAvatar>
-              <ListItemText primary={r.name ?? r.email} secondary={r.name ? r.email : undefined} />
+              <ListItemText primary={displayName(r.name)} />
             </ListItem>
           ))}
         </List>
