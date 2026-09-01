@@ -9,6 +9,7 @@ import BookStatusEditor, { UserBookFields } from "@/components/BookStatusEditor"
 import BookEditForm from "@/components/BookEditForm";
 import type { EditableBookFields } from "@/lib/books/bookEditDiff";
 import BookEditHistory, { BookEditEntry } from "@/components/BookEditHistory";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface BookLike {
   id: string;
@@ -39,6 +40,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
   const [edits, setEdits] = useState<BookEditEntry[]>([]);
   const [editingBook, setEditingBook] = useState(false);
   const [addingToShelf, setAddingToShelf] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   const loadEdits = useCallback(async (bookId: string) => {
     try {
@@ -168,9 +170,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
   async function removeFromShelf() {
     if (!userBook) return;
-    if (!window.confirm("Remove this book from your shelf? Your rating, notes, and status for it will be lost.")) {
-      return;
-    }
+    setConfirmingRemove(false);
     try {
       const response = await fetch(`/api/user-books/${userBook.id}`, { method: "DELETE" });
       if (response.status === 401) {
@@ -266,11 +266,21 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           <Box sx={{ mt: 3 }}>
             <BookStatusEditor userBook={userBook} onUpdate={updateField} />
           </Box>
-          <Button color="error" size="small" onClick={removeFromShelf} sx={{ mt: 2 }}>
+          <Button color="error" size="small" onClick={() => setConfirmingRemove(true)} sx={{ mt: 2 }}>
             Remove from shelf
           </Button>
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmingRemove}
+        title="Remove from shelf?"
+        message="Remove this book from your shelf? Your rating, notes, and status for it will be lost."
+        confirmLabel="Remove"
+        confirmColor="error"
+        onConfirm={removeFromShelf}
+        onCancel={() => setConfirmingRemove(false)}
+      />
     </Box>
   );
 }
