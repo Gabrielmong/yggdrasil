@@ -5,6 +5,7 @@ import { Box, TextField, Button, Typography } from "@mui/material";
 import type { EditableBookFields } from "@/lib/books/bookEditDiff";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import GenreTagAutocomplete from "@/components/GenreTagAutocomplete";
+import CoverPicker from "@/components/CoverPicker";
 
 interface BookEditFormProps {
   book: EditableBookFields;
@@ -25,6 +26,15 @@ export default function BookEditForm({ book, onSave, onCancel }: BookEditFormPro
   const [coverImageId, setCoverImageId] = useState<string | null>(book.coverImageId);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickingCover, setPickingCover] = useState(false);
+
+  function handleCoverPicked(url: string) {
+    setCoverUrl(url);
+    // A newly picked cover should actually show — resolveImageUrl prefers
+    // an uploaded coverImageId over coverUrl whenever both are set.
+    setCoverImageId(null);
+    setPickingCover(false);
+  }
 
   async function handleSave() {
     const trimmedTitle = title.trim();
@@ -80,10 +90,23 @@ export default function BookEditForm({ book, onSave, onCancel }: BookEditFormPro
         value={coverUrl}
         onChange={(e) => setCoverUrl(e.target.value)}
       />
+      <Box>
+        <Button variant="outlined" size="small" onClick={() => setPickingCover(true)}>
+          Search for a cover
+        </Button>
+      </Box>
       <Typography variant="body2" color="text.secondary">
         Or upload an image:
       </Typography>
       <ImageUploadButton purpose="book-cover" onUploaded={(uid) => setCoverImageId(uid)} />
+      {pickingCover && (
+        <CoverPicker
+          initialTitle={title}
+          initialAuthor={authors}
+          onSelect={handleCoverPicked}
+          onClose={() => setPickingCover(false)}
+        />
+      )}
       <Box sx={{ display: "flex", gap: 2 }}>
         <Button variant="contained" onClick={handleSave} disabled={saving}>
           Save changes
