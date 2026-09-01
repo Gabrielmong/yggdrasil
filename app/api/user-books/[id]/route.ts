@@ -2,16 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
+import { activityEventsFor } from "@/lib/activity/recordActivityEvents";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { id } = await params;
   const existing = await prisma.userBook.findUnique({ where: { id } });
-  if (!existing || existing.userId !== session.user.id) {
+  if (!existing || existing.userId !== userId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -30,17 +32,38 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "rating must be an integer between 1 and 5" }, { status: 400 });
   }
 
-  const updated = await prisma.userBook.update({
-    where: { id },
-    data: {
-      ...(status !== undefined && { status }),
-      ...(rating !== undefined && { rating }),
-      ...(notes !== undefined && { notes }),
-      ...(startedAt !== undefined && { startedAt: startedAt ? new Date(startedAt) : null }),
-      ...(finishedAt !== undefined && { finishedAt: finishedAt ? new Date(finishedAt) : null }),
-    },
-    include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
-  });
+  const nextStatus = status ?? existing.status;
+  const nextRating = rating !== undefined ? rating : existing.rating;
+  const events = activityEventsFor(
+    { status: existing.status, rating: existing.rating },
+    { status: nextStatus, rating: nextRating }
+  );
+
+  const [updated] = await prisma.$transaction([
+    prisma.userBook.update({
+      where: { id },
+      data: {
+        ...(status !== undefined && { status }),
+        ...(rating !== undefined && { rating }),
+        ...(notes !== undefined && { notes }),
+        ...(startedAt !== undefined && { startedAt: startedAt ? new Date(startedAt) : null }),
+        ...(finishedAt !== undefined && { finishedAt: finishedAt ? new Date(finishedAt) : null }),
+      },
+      include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
+    }),
+    ...(events.length > 0
+      ? [
+          prisma.activityEvent.createMany({
+            data: events.map((event) => ({
+              userId,
+              bookId: existing.bookId,
+              type: event.type,
+              rating: event.rating,
+            })),
+          }),
+        ]
+      : []),
+  ]);
 
   return NextResponse.json({ ...updated, book: serializeBookTaxonomy(updated.book) });
 }

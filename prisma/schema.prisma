@@ -20,6 +20,7 @@ model User {
   sessions  Session[]
   userBooks UserBook[]
   bookEdits BookEdit[]
+  activityEvents ActivityEvent[]
 
   sentFriendRequests     Friendship[] @relation("FriendshipRequester")
   receivedFriendRequests Friendship[] @relation("FriendshipAddressee")
@@ -89,6 +90,7 @@ model Book {
   edits      BookEdit[]
   genreLinks BookGenre[]
   tagLinks   BookTag[]
+  activityEvents ActivityEvent[]
 }
 
 model BookEdit {
@@ -184,4 +186,24 @@ model BookTag {
 
   @@id([bookId, tagId])
   @@index([tagId])
+}
+
+enum ActivityEventType {
+  STARTED_READING
+  FINISHED
+  RATED
+}
+
+model ActivityEvent {
+  id        String            @id @default(cuid())
+  userId    String
+  bookId    String
+  type      ActivityEventType
+  rating    Int?
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

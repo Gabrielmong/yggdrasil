@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AppBar, Toolbar, Typography, IconButton, Box, Avatar, Menu, MenuItem, ListItemIcon, Badge } from "@mui/material";
-import { Brightness4, Brightness7, QrCodeScanner, People } from "@mui/icons-material";
+import { Brightness4, Brightness7, QrCodeScanner, People, History } from "@mui/icons-material";
 import { useThemeMode } from "@/lib/theme-mode-context";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -71,6 +71,11 @@ export default function AppHeader() {
               <Badge badgeContent={incomingRequestCount} color="error" invisible={incomingRequestCount === 0}>
                 <People />
               </Badge>
+            </IconButton>
+          )}
+          {session?.user && (
+            <IconButton component={Link} href="/activity" color="inherit" aria-label="activity">
+              <History />
             </IconButton>
           )}
           {session?.user && (

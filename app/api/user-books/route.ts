@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
+import { activityEventsFor } from "@/lib/activity/recordActivityEvents";
 
 export async function GET() {
   const session = await auth();
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { bookId, status } = await request.json();
   if (!bookId || !status) {
@@ -30,17 +32,33 @@ export async function POST(request: Request) {
   }
 
   const existing = await prisma.userBook.findUnique({
-    where: { userId_bookId: { userId: session.user.id, bookId } },
+    where: { userId_bookId: { userId, bookId } },
     include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
   });
   if (existing) {
     return NextResponse.json({ ...existing, book: serializeBookTaxonomy(existing.book) });
   }
 
-  const userBook = await prisma.userBook.create({
-    data: { userId: session.user.id, bookId, status },
-    include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
-  });
+  const events = activityEventsFor({ status: null, rating: null }, { status, rating: null });
+
+  const [userBook] = await prisma.$transaction([
+    prisma.userBook.create({
+      data: { userId, bookId, status },
+      include: { book: { include: BOOK_TAXONOMY_INCLUDE } },
+    }),
+    ...(events.length > 0
+      ? [
+          prisma.activityEvent.createMany({
+            data: events.map((event) => ({
+              userId,
+              bookId,
+              type: event.type,
+              rating: event.rating,
+            })),
+          }),
+        ]
+      : []),
+  ]);
 
   return NextResponse.json({ ...userBook, book: serializeBookTaxonomy(userBook.book) }, { status: 201 });
 }
