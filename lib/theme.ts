@@ -23,7 +23,14 @@ export function getTheme(mode: "light" | "dark"): Theme {
   return createTheme({
     palette: {
       mode,
-      primary: mossGreen,
+      // mossGreen.main reads fine on the light theme's near-white
+      // background, but it's too dark/desaturated for enough contrast
+      // against the dark theme's near-black background (outlined/text
+      // button labels, "primary.main"-colored stat numbers, etc. were
+      // barely readable). Swap in the lighter shade as `main` for dark
+      // mode instead, matching how MUI's own dark palettes brighten their
+      // brand color rather than reusing the light-mode value as-is.
+      primary: mode === "dark" ? { main: mossGreen.light, light: mossGreen.main, dark: mossGreen.dark } : mossGreen,
       background:
         mode === "light"
           ? { default: "#F7F8F4", paper: "#FFFFFF" }
