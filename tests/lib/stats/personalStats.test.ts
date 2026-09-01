@@ -34,6 +34,8 @@ describe("computePersonalStats", () => {
       distinctAuthorCount: 0,
       distinctGenreCount: 0,
       averageRating: null,
+      shelfGenreFrequency: [],
+      shelfAuthorFrequency: [],
     });
   });
 
@@ -138,5 +140,20 @@ describe("computePersonalStats", () => {
   it("returns a null average rating when no READ books are rated", () => {
     const stats = computePersonalStats([book({ rating: null })]);
     expect(stats.averageRating).toBeNull();
+  });
+
+  it("computes shelf-wide genre/author frequency across every status, unlike the READ-only genreFrequency/authorFrequency", () => {
+    const stats = computePersonalStats([
+      book({ status: "READ", genres: ["Fantasy"], authors: ["Tolkien"] }),
+      book({ status: "WANT_TO_READ", genres: ["Fantasy", "Sci-Fi"], authors: ["Asimov"] }),
+      book({ status: "READING", genres: ["Sci-Fi"], authors: ["Asimov"] }),
+    ]);
+    expect(stats.shelfGenreFrequency).toEqual([
+      { name: "Fantasy", count: 2 },
+      { name: "Sci-Fi", count: 2 },
+    ]);
+    expect(stats.shelfAuthorFrequency).toEqual([{ name: "Asimov", count: 2 }, { name: "Tolkien", count: 1 }]);
+    // READ-only frequency is unaffected by the Want to Read/Reading books above.
+    expect(stats.genreFrequency).toEqual([{ name: "Fantasy", count: 1 }]);
   });
 });

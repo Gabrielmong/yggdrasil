@@ -9,6 +9,7 @@ import BookCard from "@/components/BookCard";
 import BookCarousel from "@/components/BookCarousel";
 import ProfileHero from "@/components/ProfileHero";
 import PersonalStatsCharts from "@/components/PersonalStatsCharts";
+import PopularChips from "@/components/PopularChips";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
 import { getStatChipSx, getStatChipHoverSx } from "@/lib/statChipStyle";
 import { buildStatCounters } from "@/lib/stats/statCounters";
@@ -127,7 +128,7 @@ export default function FriendShelfPage({ params }: { params: Promise<{ userId: 
         alignItems: "start",
       }}
     >
-      <Box sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
+      <Box sx={{ position: { md: "sticky" }, top: { md: 88 }, display: "flex", flexDirection: "column", gap: 3 }}>
         {profile && (
           <ProfileHero
             avatarUrl={avatarUrl}
@@ -152,6 +153,10 @@ export default function FriendShelfPage({ params }: { params: Promise<{ userId: 
               ))}
             </Box>
           </ProfileHero>
+        )}
+
+        {compareStats && (
+          <PopularChips genres={compareStats.friend.shelfGenreFrequency} authors={compareStats.friend.shelfAuthorFrequency} />
         )}
       </Box>
 

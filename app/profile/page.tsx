@@ -14,6 +14,7 @@ import { useTheme } from "@mui/material/styles";
 import Link from "next/link";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import PersonalStatsCharts from "@/components/PersonalStatsCharts";
+import PopularChips from "@/components/PopularChips";
 import ProfileHero from "@/components/ProfileHero";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
 import { getStatChipSx, getStatChipHoverSx } from "@/lib/statChipStyle";
@@ -136,7 +137,7 @@ export default function ProfilePage() {
         alignItems: "start",
       }}
     >
-      <Box sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
+      <Box sx={{ position: { md: "sticky" }, top: { md: 88 }, display: "flex", flexDirection: "column", gap: 3 }}>
         <ProfileHero
           avatarUrl={avatarUrl}
           fallbackInitial={profile.name?.[0] ?? profile.email[0]}
@@ -171,6 +172,8 @@ export default function ProfilePage() {
             )}
           </Stack>
         </ProfileHero>
+
+        {stats && <PopularChips genres={stats.shelfGenreFrequency} authors={stats.shelfAuthorFrequency} />}
       </Box>
 
       {stats && (

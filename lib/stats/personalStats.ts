@@ -67,6 +67,12 @@ export interface PersonalStats {
   distinctGenreCount: number;
   /** Mean rating across READ books that have one; null when none are rated. */
   averageRating: number | null;
+  /** Genre/author frequency across the ENTIRE shelf (any status), unlike
+   * genreFrequency/authorFrequency above which are READ-only — lets "most
+   * popular genres/authors" reflect what someone wants to read too, not
+   * just what they've finished. */
+  shelfGenreFrequency: FrequencyRow[];
+  shelfAuthorFrequency: FrequencyRow[];
 }
 
 function frequency(books: StatsBook[], field: "genres" | "authors"): FrequencyRow[] {
@@ -148,5 +154,7 @@ export function computePersonalStats(books: StatsBook[]): PersonalStats {
     distinctAuthorCount: authorFrequency.length,
     distinctGenreCount: genreFrequency.length,
     averageRating: computeAverageRating(readBooks),
+    shelfGenreFrequency: frequency(books, "genres"),
+    shelfAuthorFrequency: frequency(books, "authors"),
   };
 }
