@@ -22,7 +22,15 @@ export default function BookStatusEditor({ userBook, onUpdate }: BookStatusEdito
     <Box>
       <Select
         value={userBook.status}
-        onChange={(e) => onUpdate({ status: e.target.value as ReadingStatus })}
+        onChange={(e) => {
+          const status = e.target.value as ReadingStatus;
+          // Auto-fill finishedAt the first time a book is marked Read, so
+          // "books read over time" has something to bucket by without an
+          // extra manual step — "Mark finished today" below stays available
+          // to correct the date afterward.
+          const shouldSetFinishedAt = status === "READ" && !userBook.finishedAt;
+          onUpdate({ status, ...(shouldSetFinishedAt ? { finishedAt: new Date().toISOString() } : {}) });
+        }}
         sx={{ mb: 2 }}
       >
         <MenuItem value="WANT_TO_READ">Want to Read</MenuItem>

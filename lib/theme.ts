@@ -6,6 +6,13 @@ export const mossGreen = {
   dark: "#2F3D2B",
 };
 
+/** MUI X Charts don't pick up the app's theme colors on their own — every
+ * chart passes this explicitly via its `colors` prop so bars stay on-brand
+ * instead of the library's generic default palette. Moss green first, then
+ * a muted warm gold for a second series (e.g. "You" vs "Friend" on the
+ * comparison page) — picked to read clearly against green without clashing. */
+export const chartColors = [mossGreen.main, "#B08D57", mossGreen.light, mossGreen.dark];
+
 export const black = {
   main: "#000000",
   light: "#333333",

@@ -44,3 +44,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   return NextResponse.json({ ...updated, book: serializeBookTaxonomy(updated.book) });
 }
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const existing = await prisma.userBook.findUnique({ where: { id } });
+  if (!existing || existing.userId !== session.user.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.userBook.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

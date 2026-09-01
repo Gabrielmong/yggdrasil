@@ -11,6 +11,7 @@ interface BookLike {
   description: string | null;
   genres: string[];
   tags: string[];
+  isbn: string;
 }
 
 /** Read-only display of a book's cover, title, authors, genres, and description. */
@@ -30,6 +31,11 @@ export default function BookDetailHeader({ book }: { book: BookLike }) {
           {book.authors.join(", ")}
         </Typography>
         <GenreTagList genres={book.genres} tags={book.tags} />
+        {!book.isbn.startsWith("manual:") && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            ISBN {book.isbn}
+          </Typography>
+        )}
         <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>
           Description
         </Typography>

@@ -7,14 +7,17 @@ import {
   Typography,
   CircularProgress,
   Button,
-  Avatar,
-  Paper,
   Stack,
   ButtonBase,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import Link from "next/link";
 import ImageUploadButton from "@/components/ImageUploadButton";
+import PersonalStatsCharts from "@/components/PersonalStatsCharts";
+import ProfileHero from "@/components/ProfileHero";
 import { resolveImageUrl } from "@/lib/storage/resolveImageUrl";
+import { getStatChipSx, getStatChipHoverSx } from "@/lib/statChipStyle";
+import type { PersonalStats } from "@/lib/stats/personalStats";
 
 interface Profile {
   id: string;
@@ -35,14 +38,12 @@ const STAT_TABS: { label: string; status: UserBook["status"] }[] = [
   { label: "Read", status: "READ" },
 ];
 
-function memberSince(createdAt: string): string {
-  return new Date(createdAt).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-}
-
 export default function ProfilePage() {
   const router = useRouter();
+  const theme = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userBooks, setUserBooks] = useState<UserBook[] | null>(null);
+  const [stats, setStats] = useState<PersonalStats | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [pendingAvatarId, setPendingAvatarId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,10 +60,12 @@ export default function ProfilePage() {
         return res.json();
       }),
       fetch("/api/user-books").then((res) => (res.ok ? res.json() : [])),
+      fetch("/api/stats").then((res) => (res.ok ? res.json() : null)),
     ])
-      .then(([profileData, userBooksData]) => {
+      .then(([profileData, userBooksData, statsData]) => {
         if (profileData) setProfile(profileData);
         setUserBooks(userBooksData ?? []);
+        setStats(statsData);
       })
       .catch(() => setError("Could not load your profile. Please try again later."))
       .finally(() => setLoaded(true));
@@ -119,63 +122,65 @@ export default function ProfilePage() {
     "profilepictures"
   );
 
+  const statChipSx = getStatChipSx(theme);
+
   return (
-    <Box sx={{ maxWidth: 560, mx: "auto", p: { xs: 2, md: 4 } }}>
-      <Paper sx={{ p: { xs: 3, md: 5 }, textAlign: "center", borderRadius: 3 }}>
-        <Avatar
-          src={avatarUrl ?? undefined}
-          sx={{ width: 140, height: 140, mx: "auto", mb: 2, fontSize: 48 }}
+    <Box
+      sx={{
+        maxWidth: 1200,
+        mx: "auto",
+        p: { xs: 2, md: 4 },
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", md: "360px 1fr" },
+        gap: 4,
+        alignItems: "start",
+      }}
+    >
+      <Box sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
+        <ProfileHero
+          avatarUrl={avatarUrl}
+          fallbackInitial={profile.name?.[0] ?? profile.email[0]}
+          name={profile.name}
+          email={profile.email}
+          createdAt={profile.createdAt}
         >
-          {profile.name?.[0] ?? profile.email[0]}
-        </Avatar>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, mt: 3, mb: 4 }}>
+            {STAT_TABS.map((tab) => (
+              <ButtonBase
+                key={tab.status}
+                component={Link}
+                href={`/bookshelf?status=${tab.status}`}
+                sx={{ ...statChipSx, minWidth: 0, "&:hover": getStatChipHoverSx(theme) }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1, color: "primary.main" }}>
+                  {statCounts[tab.status]}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {tab.label}
+                </Typography>
+              </ButtonBase>
+            ))}
+          </Box>
 
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          {profile.name ?? "Reader"}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {profile.email}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-          Member since {memberSince(profile.createdAt)}
-        </Typography>
+          <Stack spacing={2} sx={{ alignItems: "center" }}>
+            <ImageUploadButton purpose="avatar" onUploaded={(uid) => setPendingAvatarId(uid)} />
+            {pendingAvatarId && (
+              <Button variant="contained" onClick={handleSaveAvatar} disabled={saving}>
+                Save profile picture
+              </Button>
+            )}
+          </Stack>
+        </ProfileHero>
+      </Box>
 
-        <Stack direction="row" spacing={1.5} sx={{ mt: 3, mb: 4, flexWrap: "wrap", justifyContent: "center" }}>
-          {STAT_TABS.map((tab) => (
-            <ButtonBase
-              key={tab.status}
-              component={Link}
-              href={`/bookshelf?status=${tab.status}`}
-              sx={{
-                px: 2.5,
-                py: 1.5,
-                borderRadius: 2,
-                bgcolor: "action.hover",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                minWidth: 96,
-                "&:hover": { bgcolor: "action.selected" },
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                {statCounts[tab.status]}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {tab.label}
-              </Typography>
-            </ButtonBase>
-          ))}
-        </Stack>
-
-        <Stack spacing={2} sx={{ alignItems: "center" }}>
-          <ImageUploadButton purpose="avatar" onUploaded={(uid) => setPendingAvatarId(uid)} />
-          {pendingAvatarId && (
-            <Button variant="contained" onClick={handleSaveAvatar} disabled={saving}>
-              Save profile picture
-            </Button>
-          )}
-        </Stack>
-      </Paper>
+      {stats && (
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            Your Reading Stats
+          </Typography>
+          <PersonalStatsCharts stats={stats} statChipSx={statChipSx} name="You" />
+        </Box>
+      )}
     </Box>
   );
 }

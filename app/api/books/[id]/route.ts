@@ -6,6 +6,21 @@ import { isValidImageId } from "@/lib/storage/isValidImageId";
 import { resolveGenreNames, resolveTagNames } from "@/lib/genres/resolveOrCreate";
 import { BOOK_TAXONOMY_INCLUDE, serializeBookTaxonomy } from "@/lib/books/serializeBook";
 
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const book = await prisma.book.findUnique({ where: { id }, include: BOOK_TAXONOMY_INCLUDE });
+  if (!book) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(serializeBookTaxonomy(book));
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
