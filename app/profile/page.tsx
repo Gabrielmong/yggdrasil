@@ -132,7 +132,7 @@ export default function ProfilePage() {
         mx: "auto",
         p: { xs: 2, md: 4 },
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "360px 1fr" },
+        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 360px) minmax(0, 1fr)" },
         gap: 4,
         alignItems: "start",
       }}

@@ -123,7 +123,7 @@ export default function FriendShelfPage({ params }: { params: Promise<{ userId: 
         mx: "auto",
         p: { xs: 2, md: 4 },
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "360px 1fr" },
+        gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 360px) minmax(0, 1fr)" },
         gap: 4,
         alignItems: "start",
       }}
@@ -166,7 +166,7 @@ export default function FriendShelfPage({ params }: { params: Promise<{ userId: 
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
               You vs {friendName}
             </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" }, gap: 2 }}>
               <Paper sx={{ p: 3, borderRadius: 3, textAlign: "center" }}>
                 <Typography variant="overline" color="text.secondary">You</Typography>
                 <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.5, mt: 1 }}>
