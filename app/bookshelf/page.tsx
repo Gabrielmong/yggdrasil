@@ -127,7 +127,7 @@ function BookshelfPageContent() {
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: { xs: 2, md: 4 } }}>
         <Typography color="error">{error}</Typography>
       </Box>
     );
@@ -138,7 +138,7 @@ function BookshelfPageContent() {
   const hasSearch = search.trim().length > 0 || searchIn !== "all";
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, gap: 2, flexWrap: "wrap" }}>
         <Tabs value={tab} onChange={handleTabChange}>
           {TABS.map((t) => (
@@ -224,10 +224,18 @@ function BookshelfPageContent() {
           )}
         </Box>
       ) : (
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+        <Box
+          sx={{
+            display: { xs: "grid", sm: "flex" },
+            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))" },
+            flexWrap: { sm: "wrap" },
+            gap: 2,
+          }}
+        >
           {filtered.map((ub) => (
             <BookCard
               key={ub.id}
+              fillWidth
               userBook={{
                 ...ub,
                 book: { ...ub.book, coverUrl: resolveImageUrl(ub.book.coverImageId, ub.book.coverUrl, "md", "covers") },

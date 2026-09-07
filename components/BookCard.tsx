@@ -10,12 +10,24 @@ interface UserBookLike {
   book: { id: string; title: string; authors: string[]; coverUrl: string | null };
 }
 
-export default function BookCard({ userBook }: { userBook: UserBookLike }) {
+export default function BookCard({
+  userBook,
+  fillWidth = false,
+}: {
+  userBook: UserBookLike;
+  /** Stretch to the parent's width on mobile instead of the usual fixed
+   * 160px — for a grid that controls its own column widths there (e.g.
+   * the bookshelf's 2-per-row mobile layout, which switches back to a
+   * fixed-width flex-wrap layout at the `sm` breakpoint and up). Left
+   * false everywhere a fixed-width card is expected at every size, like
+   * inside BookCarousel's horizontal scroll. */
+  fillWidth?: boolean;
+}) {
   const authorsText = userBook.book.authors.join(", ") || "Unknown author";
   const theme = useTheme();
 
   return (
-    <Card sx={{ width: 160 }}>
+    <Card sx={{ width: fillWidth ? { xs: "100%", sm: 160 } : 160 }}>
       <CardActionArea component={Link} href={`/books/${userBook.book.id}`}>
         {userBook.book.coverUrl ? (
           <CardMedia
