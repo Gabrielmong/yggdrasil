@@ -14,7 +14,10 @@ export async function GET(request: Request) {
   const friendships = await prisma.friendship.findMany({
     where: {
       status: "ACCEPTED",
-      OR: [{ requesterId: userId }, { addresseeId: userId }],
+      OR: [
+        { requesterId: userId, addressee: { active: true } },
+        { addresseeId: userId, requester: { active: true } },
+      ],
     },
     select: { requesterId: true, addresseeId: true },
   });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { symmetricPairWhere } from "@/lib/friends/friendshipWhere";
+import { isActiveFriend } from "@/lib/friends/isActiveFriend";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ userId: string }> }) {
   const session = await auth();
@@ -10,10 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ use
   }
   const { userId } = await params;
 
-  const friendship = await prisma.friendship.findFirst({
-    where: { ...symmetricPairWhere(session.user.id, userId), status: "ACCEPTED" },
-  });
-  if (!friendship) {
+  if (!(await isActiveFriend(session.user.id, userId))) {
     return NextResponse.json({ error: "Not friends" }, { status: 403 });
   }
 

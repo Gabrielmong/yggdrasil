@@ -5,7 +5,7 @@ import { symmetricPairWhere } from "@/lib/friends/friendshipWhere";
 
 // No email here — another user's email address should only ever be
 // visible on their own profile page, never in a friends/requests list.
-const USER_SELECT = { id: true, name: true, image: true, avatarImageId: true } as const;
+const USER_SELECT = { id: true, name: true, image: true, avatarImageId: true, active: true } as const;
 
 export async function GET() {
   const session = await auth();
@@ -26,6 +26,8 @@ export async function GET() {
   for (const row of rows) {
     const isRequester = row.requesterId === userId;
     const other = isRequester ? row.addressee : row.requester;
+    if (!other.active) continue; // a deactivated user disappears from every list here
+
     const entry = { friendshipId: row.id, user: other };
 
     if (row.status === "ACCEPTED") {
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "You can't send a friend request to yourself" }, { status: 400 });
   }
 
-  const addressee = await prisma.user.findUnique({ where: { id: addresseeId } });
+  const addressee = await prisma.user.findUnique({ where: { id: addresseeId, active: true } });
   if (!addressee) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }

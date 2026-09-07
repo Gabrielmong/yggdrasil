@@ -31,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           create: { email: identity.email, name: identity.name, image: identity.picture },
           update: {},
         });
+        if (!user.active) return null;
 
         return { id: user.id, email: user.email, name: user.name, image: user.image };
       },
@@ -53,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await verifyPassword(password, user.passwordHash);
         if (!valid) return null;
+        if (!user.active) return null;
 
         return { id: user.id, email: user.email, name: user.name, image: user.image };
       },
@@ -66,11 +68,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
       }
+      if (!token.id) return token;
+
+      // Re-checked on every request (JWT sessions are stateless, so a
+      // token issued before a deactivation would otherwise stay valid
+      // until it expires): a since-deactivated user's token is stripped
+      // of its id here, which the session callback below then treats as
+      // signed-out — the same effect a 401 already has everywhere else.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: token.id },
+        select: { active: true, role: true },
+      });
+      if (!dbUser?.active) {
+        delete token.id;
+        return token;
+      }
+      token.role = dbUser.role;
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
+      if (session.user && token.id && token.role) {
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
